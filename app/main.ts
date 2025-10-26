@@ -5,6 +5,18 @@ const rl = createInterface({
   output: process.stdout,
 });
 
+enum Command {
+  Exit = "exit",
+  Echo = "echo",
+  Type = "type",
+}
+
+const SHELL_COMMANDS: Record<Command, boolean> = {
+  exit: true,
+  echo: true,
+  type: true,
+};
+
 type ParsedCommand = {
   command: string;
   args: string;
@@ -20,9 +32,21 @@ function parseCommand(input: string): ParsedCommand {
     args: args.join(" "),
   };
 }
+
 function loop() {
   rl.question("$ ", (answer) => {
     const { command, args } = parseCommand(answer);
+
+    if (command === "type") {
+      console.log("com", command);
+      console.log(SHELL_COMMANDS[command]);
+      if (SHELL_COMMANDS[command]) {
+        console.log(`${args} is a shell builtin`);
+      } else {
+        console.log(`${args}: not found`);
+      }
+      return loop();
+    }
 
     if (command === "echo") {
       console.log(`${args}`);
