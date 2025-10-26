@@ -14,6 +14,7 @@ enum Command {
   Echo = "echo",
   Type = "type",
   Pwd = "pwd",
+  Cd = "cd",
 }
 
 const SHELL_COMMANDS = new Set([
@@ -21,6 +22,7 @@ const SHELL_COMMANDS = new Set([
   Command.Type,
   Command.Exit,
   Command.Pwd,
+  Command.Cd,
 ]);
 
 type ParsedCommand = {
@@ -64,6 +66,15 @@ function isExecutable(fileName: string): string {
 function loop() {
   rl.question("$ ", (answer) => {
     const { command, args } = parseCommand(answer);
+
+    if (command === "cd") {
+      try {
+        process.chdir(args);
+      } catch (e) {
+        console.log(`cd: ${args}: No such file or directory`);
+      }
+      return loop();
+    }
 
     if (command === "type") {
       if (SHELL_COMMANDS.has(args as Command)) {
