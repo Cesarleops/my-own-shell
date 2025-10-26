@@ -1,3 +1,6 @@
+import constants from "constants";
+import { accessSync, lstatSync, readFileSync } from "fs";
+import path from "path";
 import { createInterface } from "readline";
 
 const rl = createInterface({
@@ -41,7 +44,37 @@ function loop() {
       if (SHELL_COMMANDS[args]) {
         console.log(`${args} is a shell builtin`);
       } else {
-        console.log(`${args}: not found`);
+        //Implement PATH
+        // PATH is an env variable on unix based OS, DOS,and microsoft
+        // that represents a list of directories containing executable programs
+        // if the PATH is /dir1:/dir2:/dir3 the shell will look for a specific
+        // program sequentially on each folder.
+        //
+        // usr/local/bin can be a directory full of programs so we need to check if
+        // user/local/bin/<user args> is a executable file.
+        const PATH = process.env.PATH;
+        const osDelimiter = path.delimiter;
+        const executables = PATH?.split(osDelimiter);
+        if (!executables) {
+          throw new Error("Unable to read PATH");
+        }
+        let found = false;
+
+        for (const exec of executables) {
+          //Check if the argument is an executable file.
+          try {
+            const path = exec.concat("/" + args);
+            accessSync(path, constants.X_OK);
+            found = true;
+            console.log(`${args} is ${path}`);
+            break;
+          } catch (e) {
+            // console.log("error", err.message);
+          }
+        }
+        if (!found) {
+          console.log(`${args}: not found`);
+        }
       }
       return loop();
     }
