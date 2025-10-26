@@ -13,13 +13,15 @@ enum Command {
   Exit = "exit",
   Echo = "echo",
   Type = "type",
+  Pwd = "pwd",
 }
 
-const SHELL_COMMANDS: Record<Command, true> = {
-  [Command.Type]: true,
-  [Command.Echo]: true,
-  [Command.Exit]: true,
-};
+const SHELL_COMMANDS = new Set([
+  Command.Echo,
+  Command.Type,
+  Command.Exit,
+  Command.Pwd,
+]);
 
 type ParsedCommand = {
   command: string;
@@ -64,7 +66,7 @@ function loop() {
     const { command, args } = parseCommand(answer);
 
     if (command === "type") {
-      if (SHELL_COMMANDS[args]) {
+      if (SHELL_COMMANDS.has(args as Command)) {
         console.log(`${args} is a shell builtin`);
       } else {
         //Implement PATH
@@ -88,6 +90,11 @@ function loop() {
 
     if (command === "echo") {
       console.log(`${args}`);
+      return loop();
+    }
+
+    if (command === "pwd") {
+      console.log(process.cwd());
       return loop();
     }
     //exit utility shall cause the shell to exit from its current execution env with
