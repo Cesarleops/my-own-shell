@@ -69,6 +69,10 @@ function loop() {
 
     if (command === "cd") {
       try {
+        if (args.split(" ")[0] === "~") {
+          process.chdir(process.env.HOME);
+          return loop();
+        }
         process.chdir(args);
       } catch (e) {
         console.log(`cd: ${args}: No such file or directory`);
