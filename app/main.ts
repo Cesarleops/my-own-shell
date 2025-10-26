@@ -1,7 +1,8 @@
-import constants from "constants";
-import { accessSync, lstatSync, readFileSync } from "fs";
-import path from "path";
+import { accessSync } from "fs";
 import { createInterface } from "readline";
+import { spawnSync } from "child_process";
+import path from "path";
+import constants from "constants";
 
 const rl = createInterface({
   input: process.stdin,
@@ -36,6 +37,28 @@ function parseCommand(input: string): ParsedCommand {
   };
 }
 
+function getPATH(): string[] {
+  const PATH = process.env.PATH as string;
+  const osDelimiter = path.delimiter;
+  const executables = PATH.split(osDelimiter);
+
+  return executables;
+}
+
+function isExecutable(fileName: string): string {
+  const dirs = getPATH();
+  for (const dir of dirs) {
+    const path = `${dir}/${fileName}`;
+    try {
+      accessSync(path, constants.X_OK);
+      return path;
+    } catch (e) {
+      continue;
+    }
+  }
+  return "";
+}
+
 function loop() {
   rl.question("$ ", (answer) => {
     const { command, args } = parseCommand(answer);
@@ -52,27 +75,11 @@ function loop() {
         //
         // usr/local/bin can be a directory full of programs so we need to check if
         // user/local/bin/<user args> is a executable file.
-        const PATH = process.env.PATH;
-        const osDelimiter = path.delimiter;
-        const executables = PATH?.split(osDelimiter);
-        if (!executables) {
-          throw new Error("Unable to read PATH");
-        }
-        let found = false;
 
-        for (const exec of executables) {
-          //Check if the argument is an executable file.
-          try {
-            const path = exec.concat("/" + args);
-            accessSync(path, constants.X_OK);
-            found = true;
-            console.log(`${args} is ${path}`);
-            break;
-          } catch (e) {
-            // console.log("error", err.message);
-          }
-        }
-        if (!found) {
+        const exePath = isExecutable(args);
+        if (exePath) {
+          console.log(`${args} is ${exePath}`);
+        } else {
           console.log(`${args}: not found`);
         }
       }
@@ -93,8 +100,17 @@ function loop() {
       });
       return;
     }
+    const executablePath = isExecutable(command);
 
-    rl.write(answer + ":" + " command not found\n");
+    if (executablePath) {
+      const argArray = args ? args.split(" ").filter((a) => a.length > 0) : [];
+      const p = spawnSync(command, argArray, {
+        shell: false,
+        stdio: "inherit",
+      });
+    } else {
+      rl.write(answer + ":" + " command not found\n");
+    }
     return loop();
   });
 }
