@@ -11,10 +11,10 @@ enum Command {
   Type = "type",
 }
 
-const SHELL_COMMANDS: Record<Command, boolean> = {
-  exit: true,
-  echo: true,
-  type: true,
+const SHELL_COMMANDS: Record<Command, true> = {
+  [Command.Type]: true,
+  [Command.Echo]: true,
+  [Command.Exit]: true,
 };
 
 type ParsedCommand = {
@@ -38,9 +38,7 @@ function loop() {
     const { command, args } = parseCommand(answer);
 
     if (command === "type") {
-      console.log("com", command);
-      console.log(SHELL_COMMANDS[command]);
-      if (SHELL_COMMANDS[command]) {
+      if (SHELL_COMMANDS[args]) {
         console.log(`${args} is a shell builtin`);
       } else {
         console.log(`${args}: not found`);
